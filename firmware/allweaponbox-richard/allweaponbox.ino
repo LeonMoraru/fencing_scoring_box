@@ -20,8 +20,7 @@
 //============
 #include "LedControl.h"
 
-LedControl lc=LedControl(12,10,11,4);  // Pins: DIN,CLK,CS, # of Display connected
-
+LedControl lc = LedControl(12, 10, 11, 4);  // Pins: DIN,CLK,CS, # of Display connected
 
 //============
 // #defines
@@ -31,38 +30,38 @@ LedControl lc=LedControl(12,10,11,4);  // Pins: DIN,CLK,CS, # of Display connect
 //#define TEST_LIGHTS       // turns on lights for a second on start up
 //#define TEST_ADC_SPEED    // used to test sample rate of ADCs
 //#define REPORT_TIMING     // prints timings over serial interface
-#define BUZZERTIME  1000  // length of time the buzzer is kept on after a hit (ms)
-#define LIGHTTIME   5000  // length of time the lights are kept on after a hit (ms)
-#define BAUDRATE   57600  // baudrate of the serial debug interface
+#define BUZZERTIME 1000  // length of time the buzzer is kept on after a hit (ms)
+#define LIGHTTIME 5000   // length of time the lights are kept on after a hit (ms)
+#define BAUDRATE 57600   // baudrate of the serial debug interface
 
 //============
 // Pin Setup
 //============
-const uint8_t shortLEDA  =  8;    // Short Circuit A Light
-const uint8_t onTargetA  =  9;    // On Target A Light
-const uint8_t offTargetA = 10;    // Off Target A Light
-const uint8_t offTargetB = 11;    // Off Target B Light
-const uint8_t onTargetB  = 12;    // On Target B Light
-const uint8_t shortLEDB  = 13;    // Short Circuit B Light
+const uint8_t shortLEDA = 8;    // Short Circuit A Light
+const uint8_t onTargetA = 9;    // On Target A Light
+const uint8_t offTargetA = 10;  // Off Target A Light
+const uint8_t offTargetB = 11;  // Off Target B Light
+const uint8_t onTargetB = 12;   // On Target B Light
+const uint8_t shortLEDB = 13;   // Short Circuit B Light
 
-const uint8_t groundPinA = A0;    // Ground A pin - Analog
-const uint8_t weaponPinA = A1;    // Weapon A pin - Analog
-const uint8_t lamePinA   = A2;    // Lame   A pin - Analog (Epee return path)
-const uint8_t lamePinB   = A3;    // Lame   B pin - Analog (Epee return path)
-const uint8_t weaponPinB = A4;    // Weapon B pin - Analog
-const uint8_t groundPinB = A5;    // Ground B pin - Analog
+const uint8_t groundPinA = A0;  // Ground A pin - Analog
+const uint8_t weaponPinA = A1;  // Weapon A pin - Analog
+const uint8_t lamePinA = A2;    // Lame   A pin - Analog (Epee return path)
+const uint8_t lamePinB = A3;    // Lame   B pin - Analog (Epee return path)
+const uint8_t weaponPinB = A4;  // Weapon B pin - Analog
+const uint8_t groundPinB = A5;  // Ground B pin - Analog
 
-const uint8_t modePin    =  2;        // Mode change button interrupt pin 0 (digital pin 2)
-const uint8_t buzzerPin  =  3;        // buzzer pin
-const uint8_t modeLeds[] = {4, 5, 6}; // LED pins to indicate weapon mode selected {f e s}
+const uint8_t modePin = 2;             // Mode change button interrupt pin 0 (digital pin 2)
+const uint8_t buzzerPin = 3;           // buzzer pin
+const uint8_t modeLeds[] = {4, 5, 6};  // LED pins to indicate weapon mode selected {f e s}
 
 //=========================
 // values of analog reads
 //=========================
 int weaponA = 0;
 int weaponB = 0;
-int lameA   = 0;
-int lameB   = 0;
+int lameA = 0;
+int lameB = 0;
 int groundA = 0;
 int groundB = 0;
 
@@ -71,7 +70,7 @@ int groundB = 0;
 //=======================
 long depressAtime = 0;
 long depressBtime = 0;
-bool lockedOut    = false;
+bool lockedOut = false;
 
 //==========================
 // Lockout & Depress Times
@@ -84,16 +83,14 @@ bool lockedOut    = false;
 // the minimum amount of time the tip needs to be depressed (in contact) for sabre 0.1ms -> 1ms
 // These values are stored as micro seconds for more accuracy
 //                         foil   epee   sabre
-const long lockout [] = {300000,  45000, 170000};  // the lockout time between hits
-const long depress [] = { 14000,   2000,   1000};  // the minimum amount of time the tip needs to be depressed
-
-
+const long lockout[] = {300000, 45000, 170000};  // the lockout time between hits
+const long depress[] = {14000, 2000, 1000};      // the minimum amount of time the tip needs to be depressed
 
 //=================
 // mode constants
 //=================
-const uint8_t FOIL_MODE  = 0;
-const uint8_t EPEE_MODE  = 1;
+const uint8_t FOIL_MODE = 0;
+const uint8_t EPEE_MODE = 1;
 const uint8_t SABRE_MODE = 2;
 
 uint8_t currentMode = EPEE_MODE;
@@ -103,16 +100,16 @@ bool modeJustChangedFlag = false;
 //=========
 // states
 //=========
-boolean depressedA  = false;
-boolean depressedB  = false;
-boolean hitOnTargA  = false;
+boolean depressedA = false;
+boolean depressedB = false;
+boolean hitOnTargA = false;
 boolean hitOffTargA = false;
-boolean hitOnTargB  = false;
+boolean hitOnTargB = false;
 boolean hitOffTargB = false;
 
-uint8_t xhitOnTargA  = LOW;
+uint8_t xhitOnTargA = LOW;
 uint8_t xhitOffTargA = LOW;
-uint8_t xhitOnTargB  = LOW;
+uint8_t xhitOnTargB = LOW;
 uint8_t xhitOffTargB = LOW;
 
 //#ifdef TEST_ADC_SPEED
@@ -121,67 +118,62 @@ uint8_t xhitOffTargB = LOW;
 //bool done = false;
 //#endif
 
-
 // Put values in arrays
 byte Complete[] =
-{
-   B11111111,  // On frame
-   B11111111,
-   B11111111,
-   B11111111,
-   B11111111,
-   B11111111,
-   B11111111,
-   B11111111
-};
+    {
+        B11111111,  // On frame
+        B11111111,
+        B11111111,
+        B11111111,
+        B11111111,
+        B11111111,
+        B11111111,
+        B11111111};
 
 byte Small[] =
-{
-  B00000000, // Square frame
-  B00000000,
-  B00111100,
-  B00111100,
-  B00111100,
-  B00111100,
-  B00000000,
-  B00000000
-};
+    {
+        B00000000,  // Square frame
+        B00000000,
+        B00111100,
+        B00111100,
+        B00111100,
+        B00111100,
+        B00000000,
+        B00000000};
 
 byte LEDFoil[] =
-{
-  B00000000,  // Foil F
-  B00000100,
-  B00000100,
-  B00011100,
-  B00011100,
-  B00000100,
-  B00111100,
-  B00000000, 
+    {
+        B00000000,  // Foil F
+        B00000100,
+        B00000100,
+        B00011100,
+        B00011100,
+        B00000100,
+        B00111100,
+        B00000000,
 };
 
 byte LEDEpee[] =
-{
-  B00000000, // Epee E
-  B00111100,
-  B00000100,
-  B00011100,
-  B00011100,
-  B00000100,
-  B00111100,
-  B00000000
-};
+    {
+        B00000000,  // Epee E
+        B00111100,
+        B00000100,
+        B00011100,
+        B00011100,
+        B00000100,
+        B00111100,
+        B00000000};
 
 byte LEDSabre[] =
-{
-  B00000000, // Sabre S
-  B00111100,
-  B00100000,
-  B00111100,
-  B00000100,
-  B00111100,
-  B00000000,
-  B00000000
-};
+    {
+        B00000000,  // Sabre S
+        B00111100,
+        B00100000,
+        B00111100,
+        B00000100,
+        B00111100,
+        B00000000,
+        B00000000};
 //================
 // Configuration
 //================
@@ -202,26 +194,25 @@ void setup() {
    //pinMode(onTargetB,  OUTPUT);
    //pinMode(shortLEDA,  OUTPUT);
    //pinMode(shortLEDB,  OUTPUT);
-   pinMode(buzzerPin,  OUTPUT);
-  
+   pinMode(buzzerPin, OUTPUT);
+
    //digitalWrite(modeLeds[currentMode], HIGH);
 
-    lc.shutdown(0,false);  // Wake up displays
-    lc.shutdown(1,false);
-    lc.shutdown(2,false);
-    lc.shutdown(3,false);
-    lc.setIntensity(0,1);  // Set intensity levels
-    lc.setIntensity(1,1);
-    lc.setIntensity(2,1);
-    lc.setIntensity(3,1);
-    lc.clearDisplay(0);  // Clear Displays
-    lc.clearDisplay(1);
-    lc.clearDisplay(2);
-    lc.clearDisplay(3);
+   lc.shutdown(0, false);  // Wake up displays
+   lc.shutdown(1, false);
+   lc.shutdown(2, false);
+   lc.shutdown(3, false);
+   lc.setIntensity(0, 1);  // Set intensity levels
+   lc.setIntensity(1, 1);
+   lc.setIntensity(2, 1);
+   lc.setIntensity(3, 1);
+   lc.clearDisplay(0);  // Clear Displays
+   lc.clearDisplay(1);
+   lc.clearDisplay(2);
+   lc.clearDisplay(3);
 
-    testLights();
-    setModeLeds();
-
+   testLights();
+   setModeLeds();
 
    // this optimises the ADC to make the sampling rate quicker
    //adcOpt();
@@ -229,83 +220,65 @@ void setup() {
    Serial.begin(BAUDRATE);
    Serial.println("3 Weapon Scoring Box");
    Serial.println("====================");
-   Serial.print  ("Mode : ");
+   Serial.print("Mode : ");
    Serial.println(currentMode);
 
    resetValues();
 }
 
 //  Take values in Arrays and Display them
-void LEDOnTargetA()
-{
-  for (int i = 0; i < 8; i++)  
-  {
-    lc.setRow(0,i,Complete[i]);
-  }
+void LEDOnTargetA() {
+   for (int i = 0; i < 8; i++) {
+      lc.setRow(0, i, Complete[i]);
+   }
 }
 
-void LEDOnTargetB()
-{
-  for (int i = 0; i < 8; i++)  
-  {
-    lc.setRow(3,i,Complete[i]);
-  }
+void LEDOnTargetB() {
+   for (int i = 0; i < 8; i++) {
+      lc.setRow(3, i, Complete[i]);
+   }
 }
 
-void LEDOffTargetA()
-{
-  for (int i = 0; i < 8; i++)  
-  {
-    lc.setRow(1,i,Complete[i]);
-  }
+void LEDOffTargetA() {
+   for (int i = 0; i < 8; i++) {
+      lc.setRow(1, i, Complete[i]);
+   }
 }
 
-void LEDOffTargetB()
-{
-  for (int i = 0; i < 8; i++)  
-  {
-    lc.setRow(2,i,Complete[i]);
-  }
+void LEDOffTargetB() {
+   for (int i = 0; i < 8; i++) {
+      lc.setRow(2, i, Complete[i]);
+   }
 }
 
-void LEDShortA()
-{
-  for (int i = 0; i < 8; i++)  
-  {
-    lc.setRow(1,i,Small[i]);
-  }
+void LEDShortA() {
+   for (int i = 0; i < 8; i++) {
+      lc.setRow(1, i, Small[i]);
+   }
 }
 
-void LEDShortB()
-{
-  for (int i = 0; i < 8; i++)  
-  {
-    lc.setRow(2,i,Small[i]);
-  }
+void LEDShortB() {
+   for (int i = 0; i < 8; i++) {
+      lc.setRow(2, i, Small[i]);
+   }
 }
 
-void ShowLEDFoil()
-{
-  for (int i = 0; i < 8; i++)  
-  {
-    lc.setRow(1,i,LEDFoil[i]);
-  }
+void ShowLEDFoil() {
+   for (int i = 0; i < 8; i++) {
+      lc.setRow(1, i, LEDFoil[i]);
+   }
 }
 
-void ShowLEDEpee()
-{
-  for (int i = 0; i < 8; i++)  
-  {
-    lc.setRow(1,i,LEDEpee[i]);
-  }
+void ShowLEDEpee() {
+   for (int i = 0; i < 8; i++) {
+      lc.setRow(1, i, LEDEpee[i]);
+   }
 }
 
-void ShowLEDSabre()
-{
-  for (int i = 0; i < 8; i++)  
-  {
-    lc.setRow(1,i,LEDSabre[i]);
-  }
+void ShowLEDSabre() {
+   for (int i = 0; i < 8; i++) {
+      lc.setRow(1, i, LEDSabre[i]);
+   }
 }
 
 //=============
@@ -313,41 +286,40 @@ void ShowLEDSabre()
 //=============
 //void adcOpt() {
 
-   // the ADC only needs a couple of bits, the atmega is an 8 bit micro
-   // so sampling only 8 bits makes the values easy/quicker to process
-   // unfortunately this method only works on the Due.
-   // analogReadResolution(8);
+// the ADC only needs a couple of bits, the atmega is an 8 bit micro
+// so sampling only 8 bits makes the values easy/quicker to process
+// unfortunately this method only works on the Due.
+// analogReadResolution(8);
 
-   // Data Input Disable Register
-   // disconnects the digital inputs from which ever ADC channels you are using
-   // an analog input will be float and cause the digital input to constantly
-   // toggle high and low, this creates noise near the ADC, and uses extra 
-   // power Secondly, the digital input and associated DIDR switch have a
-   // capacitance associated with them which will slow down your input signal
-   // if you’re sampling a highly resistive load 
-   //DIDR0 = 0x7F;
+// Data Input Disable Register
+// disconnects the digital inputs from which ever ADC channels you are using
+// an analog input will be float and cause the digital input to constantly
+// toggle high and low, this creates noise near the ADC, and uses extra
+// power Secondly, the digital input and associated DIDR switch have a
+// capacitance associated with them which will slow down your input signal
+// if you’re sampling a highly resistive load
+//DIDR0 = 0x7F;
 
-   // set the prescaler for the ADCs to 16 this allowes the fastest sampling
-   //bitClear(ADCSRA, ADPS0);
-   //bitClear(ADCSRA, ADPS1);
-   //bitSet  (ADCSRA, ADPS2);
+// set the prescaler for the ADCs to 16 this allowes the fastest sampling
+//bitClear(ADCSRA, ADPS0);
+//bitClear(ADCSRA, ADPS1);
+//bitSet  (ADCSRA, ADPS2);
 
 //}
 
-   
 //============
 // Main Loop
 //============
 void loop() {
    // use a while as a main loop as the loop() has too much overhead for fast analogReads
    // we get a 3-4% speed up on the loop this way
-   while(1) {
+   while (1) {
       checkIfModeChanged();
       // read analog pins
       weaponA = analogRead(weaponPinA);
       weaponB = analogRead(weaponPinB);
-      lameA   = analogRead(lamePinA);
-      lameB   = analogRead(lamePinB);
+      lameA = analogRead(lamePinA);
+      lameB = analogRead(lamePinB);
       //Serial.print  ("WeaponA : ");
       //Serial.println(weaponA);
       //Serial.print  ("WeaponB : ");
@@ -358,7 +330,7 @@ void loop() {
       //Serial.println(lameB);
       signalHits();
       //delay(2000);
-      if      (currentMode == FOIL_MODE)
+      if (currentMode == FOIL_MODE)
          foil();
       else if (currentMode == EPEE_MODE)
          epee();
@@ -370,7 +342,7 @@ void loop() {
          now = micros();
       }
       loopCount++;
-      if ((micros()-now >= 1000000) && done == false) {
+      if ((micros() - now >= 1000000) && !done) {
          Serial.print(loopCount);
          Serial.println(" readings in 1 sec");
          done = true;
@@ -387,36 +359,30 @@ void changeMode() {
    modeJustChangedFlag = true;
 }
 
-
 //============================
 // Sets the correct mode led
 //============================
 void setModeLeds() {
    if (currentMode == FOIL_MODE) {
       ShowLEDFoil();
-   } else {
-      if (currentMode == EPEE_MODE) {
-        ShowLEDEpee();
-      } else {
-         if (currentMode == SABRE_MODE){
-            ShowLEDSabre();
-         }
-      }
+   } else if (currentMode == EPEE_MODE) {
+      ShowLEDEpee();
+   } else if (currentMode == SABRE_MODE) {
+      ShowLEDSabre();
    }
+
    delay(2000);
    lc.clearDisplay(0);  // Clear Displays
    lc.clearDisplay(1);
    lc.clearDisplay(2);
    lc.clearDisplay(3);
-   
 }
-
 
 //========================
 // Run when mode changed
 //========================
 void checkIfModeChanged() {
- if (modeJustChangedFlag) {
+   if (modeJustChangedFlag) {
       if (digitalRead(modePin)) {
          if (currentMode == 2)
             currentMode = 0;
@@ -432,36 +398,34 @@ void checkIfModeChanged() {
    }
 }
 
-
 //===================
 // Main foil method
 //===================
 void foil() {
-
    long now = micros();
-   if (((hitOnTargA || hitOffTargA) && (depressAtime + lockout[0] < now)) || 
+   if (((hitOnTargA || hitOffTargA) && (depressAtime + lockout[0] < now)) ||
        ((hitOnTargB || hitOffTargB) && (depressBtime + lockout[0] < now))) {
       lockedOut = true;
    }
 
    // weapon A
-   if (hitOnTargA == false && hitOffTargA == false) { // ignore if A has already hit
+   if (!hitOnTargA && !hitOffTargA) {  // ignore if A has already hit
       // off target
       if (900 < weaponA && lameB < 100) {
          if (!depressedA) {
             depressAtime = micros();
-            depressedA   = true;
+            depressedA = true;
          } else {
             if (depressAtime + depress[0] <= micros()) {
                hitOffTargA = true;
             }
          }
       } else {
-      // on target
+         // on target
          if (300 < weaponA && weaponA < 600 && 300 < lameB && lameB < 600) {
             if (!depressedA) {
                depressAtime = micros();
-               depressedA   = true;
+               depressedA = true;
             } else {
                if (depressAtime + depress[0] <= micros()) {
                   hitOnTargA = true;
@@ -470,29 +434,29 @@ void foil() {
          } else {
             // reset these values if the depress time is short.
             depressAtime = 0;
-            depressedA   = 0;
+            depressedA = 0;
          }
       }
    }
 
    // weapon B
-   if (hitOnTargB == false && hitOffTargB == false) { // ignore if B has already hit
+   if (!hitOnTargB && !hitOffTargB) {  // ignore if B has already hit
       // off target
       if (900 < weaponB && lameA < 100) {
          if (!depressedB) {
             depressBtime = micros();
-            depressedB   = true;
+            depressedB = true;
          } else {
             if (depressBtime + depress[0] <= micros()) {
                hitOffTargB = true;
             }
          }
       } else {
-      // on target
+         // on target
          if (300 < weaponB && weaponB < 600 && 300 < lameA && lameA < 600) {
             if (!depressedB) {
                depressBtime = micros();
-               depressedB   = true;
+               depressedB = true;
             } else {
                if (depressBtime + depress[0] <= micros()) {
                   hitOnTargB = true;
@@ -501,12 +465,11 @@ void foil() {
          } else {
             // reset these values if the depress time is short.
             depressBtime = 0;
-            depressedB   = 0;
+            depressedB = 0;
          }
       }
    }
 }
-
 
 //===================
 // Main epee method
@@ -519,11 +482,11 @@ void epee() {
 
    // weapon A
    //  no hit for A yet    && weapon depress    && opponent lame touched
-   if (hitOnTargA == false) {
+   if (!hitOnTargA) {
       if (400 < weaponA && weaponA < 600 && 400 < lameA && lameA < 600) {
          if (!depressedA) {
             depressAtime = micros();
-            depressedA   = true;
+            depressedA = true;
          } else {
             if (depressAtime + depress[1] <= micros()) {
                hitOnTargA = true;
@@ -531,20 +494,20 @@ void epee() {
          }
       } else {
          // reset these values if the depress time is short.
-         if (depressedA == true) {
+         if (depressedA) {
             depressAtime = 0;
-            depressedA   = 0;
+            depressedA = 0;
          }
       }
    }
 
    // weapon B
    //  no hit for B yet    && weapon depress    && opponent lame touched
-   if (hitOnTargB == false) {
+   if (!hitOnTargB) {
       if (400 < weaponB && weaponB < 600 && 400 < lameB && lameB < 600) {
          if (!depressedB) {
             depressBtime = micros();
-            depressedB   = true;
+            depressedB = true;
          } else {
             if (depressBtime + depress[1] <= micros()) {
                hitOnTargB = true;
@@ -552,33 +515,31 @@ void epee() {
          }
       } else {
          // reset these values if the depress time is short.
-         if (depressedB == true) {
+         if (depressedB) {
             depressBtime = 0;
-            depressedB   = 0;
+            depressedB = 0;
          }
       }
    }
 }
 
-
 //===================
 // Main sabre method
 //===================
 void sabre() {
-
    long now = micros();
-   if (((hitOnTargA || hitOffTargA) && (depressAtime + lockout[2] < now)) || 
+   if (((hitOnTargA || hitOffTargA) && (depressAtime + lockout[2] < now)) ||
        ((hitOnTargB || hitOffTargB) && (depressBtime + lockout[2] < now))) {
       lockedOut = true;
    }
 
    // weapon A
-   if (hitOnTargA == false && hitOffTargA == false) { // ignore if A has already hit
+   if (!hitOnTargA && !hitOffTargA) {  // ignore if A has already hit
       // on target
       if (300 < weaponA && weaponA < 450 && 300 < lameB && lameB < 600) {
          if (!depressedA) {
             depressAtime = micros();
-            depressedA   = true;
+            depressedA = true;
          } else {
             if (depressAtime + depress[2] <= micros()) {
                hitOnTargA = true;
@@ -587,17 +548,17 @@ void sabre() {
       } else {
          // reset these values if the depress time is short.
          depressAtime = 0;
-         depressedA   = 0;
+         depressedA = 0;
       }
    }
 
    // weapon B
-   if (hitOnTargB == false && hitOffTargB == false) { // ignore if B has already hit
+   if (!hitOnTargB && !hitOffTargB) {  // ignore if B has already hit
       // on target
       if (300 < weaponB && weaponB < 450 && 300 < lameA && lameA < 600) {
          if (!depressedB) {
             depressBtime = micros();
-            depressedB   = true;
+            depressedB = true;
          } else {
             if (depressBtime + depress[2] <= micros()) {
                hitOnTargB = true;
@@ -606,11 +567,10 @@ void sabre() {
       } else {
          // reset these values if the depress time is short.
          depressBtime = 0;
-         depressedB   = 0;
+         depressedB = 0;
       }
    }
 }
-
 
 //==============
 // Signal Hits
@@ -618,61 +578,62 @@ void sabre() {
 void signalHits() {
    // non time critical, this is run after a hit has been detected
    if (lockedOut) {
-      xhitOnTargA  = LOW;
+      xhitOnTargA = LOW;
       xhitOffTargA = LOW;
-      xhitOnTargB  = LOW;
+      xhitOnTargB = LOW;
       xhitOffTargB = LOW;
-      if (hitOnTargA  == true ) { LEDOnTargetA() ; }
-      if (hitOffTargA == true ) { LEDOffTargetA(); }
-      if (hitOnTargB  == true ) { LEDOnTargetB() ; }
-      if (hitOffTargB == true ) { LEDOffTargetB(); }
-      digitalWrite(buzzerPin,LOW);
+      if (hitOnTargA)
+         LEDOnTargetA();
+
+      if (hitOffTargA)
+         LEDOffTargetA();
+
+      if (hitOnTargB)
+         LEDOnTargetB();
+
+      if (hitOffTargB)
+         LEDOffTargetB();
+
+      digitalWrite(buzzerPin, LOW);
 #ifdef DEBUG
-      String serData = String("hitOnTargA  : ") + hitOnTargA  + "\n"
-                            + "hitOffTargA : "  + hitOffTargA + "\n"
-                            + "hitOffTargB : "  + hitOffTargB + "\n"
-                            + "hitOnTargB  : "  + hitOnTargB  + "\n"
-                            + "Locked Out  : "  + lockedOut   + "\n";
+      String serData = String("hitOnTargA  : ") + hitOnTargA + "\n" + "hitOffTargA : " + hitOffTargA + "\n" + "hitOffTargB : " + hitOffTargB + "\n" + "hitOnTargB  : " + hitOnTargB + "\n" + "Locked Out  : " + lockedOut + "\n";
       Serial.println(serData);
 #endif
       resetValues();
    }
 }
 
-
 //======================
 // Reset all variables
 //======================
 void resetValues() {
-   delay(BUZZERTIME);             // wait before turning off the buzzer
-   digitalWrite(buzzerPin,HIGH);
-   delay(LIGHTTIME-BUZZERTIME);   // wait before turning off the lights
-   lc.clearDisplay(0);  // Clear Displays
+   delay(BUZZERTIME);  // wait before turning off the buzzer
+   digitalWrite(buzzerPin, HIGH);
+   delay(LIGHTTIME - BUZZERTIME);  // wait before turning off the lights
+   lc.clearDisplay(0);             // Clear Displays
    lc.clearDisplay(1);
    lc.clearDisplay(2);
    lc.clearDisplay(3);
 
-
-   lockedOut    = false;
+   lockedOut = false;
    depressAtime = 0;
-   depressedA   = false;
+   depressedA = false;
    depressBtime = 0;
-   depressedB   = false;
+   depressedB = false;
 
-   hitOnTargA  = false;
+   hitOnTargA = false;
    hitOffTargA = false;
-   hitOnTargB  = false;
+   hitOnTargB = false;
    hitOffTargB = false;
 
    delay(100);
 }
 
-
 //==============
 // Test lights
 //==============
 void testLights() {
-   digitalWrite(buzzerPin,HIGH);
+   digitalWrite(buzzerPin, HIGH);
    LEDOnTargetA();
    delay(250);
    LEDOffTargetA();
