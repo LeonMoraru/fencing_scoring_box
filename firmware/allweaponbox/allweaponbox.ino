@@ -92,12 +92,12 @@ bool modeJustChangedFlag = false;
 //=========
 // states
 //=========
-boolean depressedA = false;
-boolean depressedB = false;
-boolean hitOnTargA = false;
-boolean hitOffTargA = false;
-boolean hitOnTargB = false;
-boolean hitOffTargB = false;
+bool depressedA = false;
+bool depressedB = false;
+bool hitOnTargA = false;
+bool hitOffTargA = false;
+bool hitOnTargB = false;
+bool hitOffTargB = false;
 
 #ifdef TEST_ADC_SPEED
 long now;
@@ -251,6 +251,41 @@ void checkIfModeChanged() {
 }
 
 //===================
+// Foil method per person
+//===================
+void foil_sub(bool &hitOnTarget, bool &hitOffTarget, bool &depressed, int &weaponAnalog, int &lameAnalog, long &depressedTime) {
+   if (!hitOnTarget && !hitOffTarget) {  // ignore if it has already hit
+      // off target
+      if (900 < weaponAnalog && lameAnalog < 100) {
+         if (!depressed) {
+            depressedTime = micros();
+            depressed = true;
+         } else {
+            if (depressedTime + depress[0] <= micros()) {
+               hitOffTarget = true;
+            }
+         }
+      } else {
+         // on target
+         if (300 < weaponAnalog && weaponAnalog < 600 && 300 < lameAnalog && lameAnalog < 600) {
+            if (!depressed) {
+               depressedTime = micros();
+               depressed = true;
+            } else {
+               if (depressedTime + depress[0] <= micros()) {
+                  hitOnTarget = true;
+               }
+            }
+         } else {
+            // reset these values if the depress time is short.
+            depressedTime = 0;
+            depressed = 0;
+         }
+      }
+   }
+}
+
+//===================
 // Main foil method
 //===================
 void foil() {
@@ -260,65 +295,26 @@ void foil() {
       lockedOut = true;
    }
 
-   // weapon A
-   if (!hitOnTargA && !hitOffTargA) {  // ignore if A has already hit
-      // off target
-      if (900 < weaponA && lameB < 100) {
-         if (!depressedA) {
-            depressAtime = micros();
-            depressedA = true;
-         } else {
-            if (depressAtime + depress[0] <= micros()) {
-               hitOffTargA = true;
-            }
-         }
-      } else {
-         // on target
-         if (400 < weaponA && weaponA < 600 && 400 < lameB && lameB < 600) {
-            if (!depressedA) {
-               depressAtime = micros();
-               depressedA = true;
-            } else {
-               if (depressAtime + depress[0] <= micros()) {
-                  hitOnTargA = true;
-               }
-            }
-         } else {
-            // reset these values if the depress time is short.
-            depressAtime = 0;
-            depressedA = 0;
-         }
-      }
-   }
+   foil_sub(hitOnTargA, hitOffTargA, depressedA, weaponA, lameB, depressAtime);
+   foil_sub(hitOnTargB, hitOffTargB, depressedB, weaponB, lameA, depressBtime);
+}
 
-   // weapon B
-   if (!hitOnTargB && !hitOffTargB) {  // ignore if B has already hit
-      // off target
-      if (900 < weaponB && lameA < 100) {
-         if (!depressedB) {
-            depressBtime = micros();
-            depressedB = true;
-         } else {
-            if (depressBtime + depress[0] <= micros()) {
-               hitOffTargB = true;
-            }
+//===================
+// Epee method per person
+//===================
+void epee_sub(bool &hitOnTarget, bool &depressed, int &weaponAnalog, int &lameAnalog, long &depressedTime) {
+   //  no hit for A yet    && weapon depress    && opponent lame touched
+   if (!hitOnTarget) {
+      if (400 < weaponAnalog && weaponAnalog < 600 && 400 < lameAnalog && lameAnalog < 600) {
+         if (!depressed) {
+            depressedTime = micros();
+            depressed = true;
+         } else if (depressedTime + depress[1] <= micros()) {
+            hitOnTarget = true;
          }
-      } else {
-         // on target
-         if (400 < weaponB && weaponB < 600 && 400 < lameA && lameA < 600) {
-            if (!depressedB) {
-               depressBtime = micros();
-               depressedB = true;
-            } else {
-               if (depressBtime + depress[0] <= micros()) {
-                  hitOnTargB = true;
-               }
-            }
-         } else {
-            // reset these values if the depress time is short.
-            depressBtime = 0;
-            depressedB = 0;
-         }
+      } else if (depressed) {  // reset these values if the depress time is short.
+         depressedTime = 0;
+         depressed = 0;
       }
    }
 }
@@ -333,45 +329,27 @@ void epee() {
       lockedOut = true;
    }
 
-   // weapon A
-   //  no hit for A yet    && weapon depress    && opponent lame touched
-   if (!hitOnTargA) {
-      if (400 < weaponA && weaponA < 600 && 400 < lameA && lameA < 600) {
-         if (!depressedA) {
-            depressAtime = micros();
-            depressedA = true;
-         } else {
-            if (depressAtime + depress[1] <= micros()) {
-               hitOnTargA = true;
-            }
-         }
-      } else {
-         // reset these values if the depress time is short.
-         if (depressedA) {
-            depressAtime = 0;
-            depressedA = 0;
-         }
-      }
-   }
+   epee_sub(hitOnTargA, depressedA, weaponA, lameB, depressAtime);
+   epee_sub(hitOnTargB, depressedB, weaponB, lameA, depressBtime);
+}
 
-   // weapon B
-   //  no hit for B yet    && weapon depress    && opponent lame touched
-   if (!hitOnTargB) {
-      if (400 < weaponB && weaponB < 600 && 400 < lameB && lameB < 600) {
-         if (!depressedB) {
-            depressBtime = micros();
-            depressedB = true;
-         } else {
-            if (depressBtime + depress[1] <= micros()) {
-               hitOnTargB = true;
-            }
+//===================
+// Sabre method per person
+//===================
+void sabre_sub(bool &hitOnTarget, bool &depressed, int &weaponAnalog, int &lameAnalog, long &depressedTime) {
+   if (!hitOnTarget) {  // ignore if A has already hit
+      // on target
+      if (300 < weaponAnalog && weaponAnalog < 450 && 300 < lameAnalog && lameAnalog < 600) {
+         if (!depressed) {
+            depressedTime = micros();
+            depressed = true;
+         } else if (depressedTime + depress[2] <= micros()) {
+            hitOnTarget = true;
          }
       } else {
          // reset these values if the depress time is short.
-         if (depressedB) {
-            depressBtime = 0;
-            depressedB = 0;
-         }
+         depressedTime = 0;
+         depressed = 0;
       }
    }
 }
@@ -381,48 +359,13 @@ void epee() {
 //===================
 void sabre() {
    long now = micros();
-   if (((hitOnTargA || hitOffTargA) && (depressAtime + lockout[2] < now)) ||
-       ((hitOnTargB || hitOffTargB) && (depressBtime + lockout[2] < now))) {
+   if ((hitOnTargA && (depressAtime + lockout[2] < now)) ||
+       (hitOnTargB && (depressBtime + lockout[2] < now))) {
       lockedOut = true;
    }
 
-   // weapon A
-   if (!hitOnTargA && !hitOffTargA) {  // ignore if A has already hit
-      // on target
-      if (400 < weaponA && weaponA < 600 && 400 < lameB && lameB < 600) {
-         if (!depressedA) {
-            depressAtime = micros();
-            depressedA = true;
-         } else {
-            if (depressAtime + depress[2] <= micros()) {
-               hitOnTargA = true;
-            }
-         }
-      } else {
-         // reset these values if the depress time is short.
-         depressAtime = 0;
-         depressedA = 0;
-      }
-   }
-
-   // weapon B
-   if (!hitOnTargB && !hitOffTargB) {  // ignore if B has already hit
-      // on target
-      if (400 < weaponB && weaponB < 600 && 400 < lameA && lameA < 600) {
-         if (!depressedB) {
-            depressBtime = micros();
-            depressedB = true;
-         } else {
-            if (depressBtime + depress[2] <= micros()) {
-               hitOnTargB = true;
-            }
-         }
-      } else {
-         // reset these values if the depress time is short.
-         depressBtime = 0;
-         depressedB = 0;
-      }
-   }
+   sabre_sub(hitOnTargA, depressedA, weaponA, lameB, depressAtime);
+   sabre_sub(hitOnTargB, depressedB, weaponB, lameA, depressBtime);
 }
 
 //==============
