@@ -99,6 +99,11 @@ bool hitOffTargA = false;
 bool hitOnTargB = false;
 bool hitOffTargB = false;
 
+bool lightOnTargA  = false;
+bool lightOffTargA = false;
+bool lightOnTargB  = false;
+bool lightOffTargB = false;
+
 #ifdef TEST_ADC_SPEED
 long now;
 long loopCount = 0;
@@ -380,21 +385,37 @@ void sabre() {
 void signalHits() {
    // non time critical, this is run after a hit has been detected
    if (lockedOut) {
-      digitalWrite(onTargetA, hitOnTargA);
-      digitalWrite(offTargetA, hitOffTargA);
-      digitalWrite(offTargetB, hitOffTargB);
-      digitalWrite(onTargetB, hitOnTargB);
-      digitalWrite(buzzerPin, HIGH);
 #ifdef DEBUG
-      String serData = String("hitOnTargA  : ") + hitOnTargA + "\n" +
-                       "hitOffTargA : " + hitOffTargA + "\n" +
-                       "hitOffTargB : " + hitOffTargB + "\n" +
-                       "hitOnTargB  : " + hitOnTargB + "\n" +
-                       "Locked Out  : " + lockedOut + "\n";
+      String serData = String("hitOnTargA  : ") + hitOnTargA  + "\n"
+                            + "hitOffTargA : "  + hitOffTargA + "\n"
+                            + "hitOffTargB : "  + hitOffTargB + "\n"
+                            + "hitOnTargB  : "  + hitOnTargB  + "\n"
+                            + "Locked Out  : "  + lockedOut   + "\n";
       Serial.println(serData);
 #endif
       resetValues();
    }
+
+  if(hitOnTargA && !lightOnTargA){
+    digitalWrite(onTargetA, HIGH);
+    digitalWrite(buzzerPin,  HIGH);
+    lightOnTargA = true;
+  }
+  if(hitOffTargA && !lightOffTargA){
+    digitalWrite(offTargetA, HIGH);
+    digitalWrite(buzzerPin,  HIGH);
+    lightOffTargA = true;
+  }
+  if(hitOffTargB && !lightOffTargB){
+    digitalWrite(offTargetB, HIGH);
+    digitalWrite(buzzerPin,  HIGH);
+    lightOffTargB = true;
+  }
+  if(hitOnTargB && !lightOnTargB){
+    digitalWrite(onTargetB,  HIGH);
+    digitalWrite(buzzerPin,  HIGH);
+    lightOnTargB = true;
+  }
 }
 
 //======================
@@ -421,6 +442,11 @@ void resetValues() {
    hitOffTargA = false;
    hitOnTargB = false;
    hitOffTargB = false;
+
+   lightOnTargA  = false;
+   lightOffTargA = false;
+   lightOnTargB  = false;
+   lightOffTargB = false;
 
    delay(100);
 }

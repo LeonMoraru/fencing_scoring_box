@@ -112,6 +112,11 @@ uint8_t xhitOffTargA = LOW;
 uint8_t xhitOnTargB = LOW;
 uint8_t xhitOffTargB = LOW;
 
+bool lightOnTargA  = false;
+bool lightOffTargA = false;
+bool lightOnTargB  = false;
+bool lightOffTargB = false;
+
 //#ifdef TEST_ADC_SPEED
 // long now;
 // long loopCount = 0;
@@ -535,30 +540,45 @@ void sabre() {
 //==============
 void signalHits() {
    // non time critical, this is run after a hit has been detected
-   if (lockedOut) {
-      xhitOnTargA = LOW;
-      xhitOffTargA = LOW;
-      xhitOnTargB = LOW;
-      xhitOffTargB = LOW;
-      if (hitOnTargA)
-         LEDOnTargetA();
+   
+   xhitOnTargA = LOW;
+   xhitOffTargA = LOW;
+   xhitOnTargB = LOW;
+   xhitOffTargB = LOW;
 
-      if (hitOffTargA)
-         LEDOffTargetA();
-
-      if (hitOnTargB)
-         LEDOnTargetB();
-
-      if (hitOffTargB)
-         LEDOffTargetB();
-
+   if (hitOnTargA && !lightOnTargA) {
+      LEDOnTargetA();
       digitalWrite(buzzerPin, LOW);
+      lightOnTargA = true;
+   }   
+
+   if (hitOffTargA && !lightOffTargA) {
+      LEDOffTargetA();
+      digitalWrite(buzzerPin, LOW);
+      lightOffTargA = true;
+   }
+
+   if (hitOnTargB && !lightOnTargB) {
+      LEDOnTargetB();
+      digitalWrite(buzzerPin, LOW);
+      lightOnTargB = true;
+   }
+
+   if (hitOffTargB && !lightOffTargB) {
+      LEDOffTargetB();
+      digitalWrite(buzzerPin, LOW);
+      lightOffTargB = true;
+   }
+
 #ifdef DEBUG
       String serData = String("hitOnTargA  : ") + hitOnTargA + "\n" + "hitOffTargA : " + hitOffTargA + "\n" + "hitOffTargB : " + hitOffTargB + "\n" + "hitOnTargB  : " + hitOnTargB + "\n" + "Locked Out  : " + lockedOut + "\n";
       Serial.println(serData);
 #endif
-      resetValues();
+
+   if (lockedOut) {      
+      resetValues();      
    }
+
 }
 
 //======================
@@ -583,6 +603,11 @@ void resetValues() {
    hitOffTargA = false;
    hitOnTargB = false;
    hitOffTargB = false;
+
+   lightOnTargA  = false;
+   lightOffTargA = false;
+   lightOnTargB  = false;
+   lightOffTargB = false;
 
    delay(100);
 }
